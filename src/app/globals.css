@@ -1,0 +1,152 @@
+@import url("https://fonts.googleapis.com/css2?family=Syne:wght@400;500;600;700;800&family=DM+Sans:ital,opsz,wght@0,9..40,300;0,9..40,400;0,9..40,500;0,9..40,600;1,9..40,400&family=JetBrains+Mono:wght@400;500;600&display=swap");
+@import "tailwindcss";
+
+@custom-variant dark (&:where(.dark, .dark *));
+
+@theme inline {
+  --font-display: "Syne", sans-serif;
+  --font-sans: "DM Sans", sans-serif;
+  --font-mono: "JetBrains Mono", monospace;
+
+  --color-background: hsl(221, 65%, 6%);
+  --color-foreground: hsl(213, 31%, 91%);
+  --color-card: hsl(222, 60%, 9%);
+  --color-card-foreground: hsl(213, 31%, 91%);
+  --color-popover: hsl(222, 60%, 9%);
+  --color-popover-foreground: hsl(213, 31%, 91%);
+  --color-primary: hsl(239, 84%, 67%);
+  --color-primary-foreground: hsl(222, 60%, 9%);
+  --color-secondary: hsl(222, 47%, 14%);
+  --color-secondary-foreground: hsl(213, 31%, 91%);
+  --color-muted: hsl(222, 47%, 14%);
+  --color-muted-foreground: hsl(215, 25%, 45%);
+  --color-accent: hsl(222, 47%, 14%);
+  --color-accent-foreground: hsl(213, 31%, 91%);
+  --color-destructive: hsl(0, 72%, 51%);
+  --color-destructive-foreground: hsl(210, 40%, 98%);
+  --color-border: hsl(222, 47%, 18%);
+  --color-input: hsl(222, 47%, 14%);
+  --color-ring: hsl(239, 84%, 67%);
+  --radius: 0.625rem;
+
+  --color-sidebar: hsl(222, 60%, 9%);
+  --color-sidebar-foreground: hsl(213, 31%, 91%);
+  --color-sidebar-primary: hsl(239, 84%, 67%);
+  --color-sidebar-primary-foreground: hsl(0, 0%, 100%);
+  --color-sidebar-accent: hsl(222, 47%, 14%);
+  --color-sidebar-accent-foreground: hsl(213, 31%, 91%);
+  --color-sidebar-border: hsl(222, 47%, 18%);
+  --color-sidebar-ring: hsl(239, 84%, 67%);
+}
+
+*, *::before, *::after {
+  box-sizing: border-box;
+  border-color: hsl(222, 47%, 18%);
+}
+
+html {
+  color-scheme: dark;
+}
+
+body {
+  background-color: #080b14;
+  color: #e2e8f0;
+  font-family: "DM Sans", sans-serif;
+  background-image:
+    radial-gradient(ellipse 80% 50% at 50% -20%, rgba(99, 102, 241, 0.12), transparent),
+    radial-gradient(ellipse 40% 30% at 80% 80%, rgba(16, 185, 129, 0.04), transparent);
+  min-height: 100vh;
+}
+
+h1, h2, h3, h4, h5, h6 {
+  font-family: "Syne", sans-serif;
+}
+
+code, pre {
+  font-family: "JetBrains Mono", monospace;
+}
+
+/* Scrollbar */
+::-webkit-scrollbar { width: 4px; height: 4px; }
+::-webkit-scrollbar-track { background: transparent; }
+::-webkit-scrollbar-thumb { background: #2a3347; border-radius: 99px; }
+::-webkit-scrollbar-thumb:hover { background: #3d4f6e; }
+
+/* Node graph animations */
+@keyframes pulse-glow {
+  0%, 100% { box-shadow: 0 0 0 0 rgba(99, 102, 241, 0); }
+  50% { box-shadow: 0 0 0 6px rgba(99, 102, 241, 0.15); }
+}
+
+@keyframes flow-line {
+  0% { stroke-dashoffset: 24; }
+  100% { stroke-dashoffset: 0; }
+}
+
+@keyframes fade-in-up {
+  from { opacity: 0; transform: translateY(16px); }
+  to { opacity: 1; transform: translateY(0); }
+}
+
+@keyframes slide-in-right {
+  from { opacity: 0; transform: translateX(24px); }
+  to { opacity: 1; transform: translateX(0); }
+}
+
+@keyframes scale-in {
+  from { opacity: 0; transform: scale(0.94); }
+  to { opacity: 1; transform: scale(1); }
+}
+
+.animate-fade-in-up {
+  animation: fade-in-up 0.4s ease forwards;
+}
+
+.animate-slide-in-right {
+  animation: slide-in-right 0.35s ease forwards;
+}
+
+.animate-scale-in {
+  animation: scale-in 0.3s ease forwards;
+}
+
+.node-active {
+  animation: pulse-glow 2.5s ease-in-out infinite;
+}
+
+.flow-line {
+  stroke-dasharray: 6 4;
+  animation: flow-line 0.8s linear infinite;
+}
+
+/* Gradient text */
+.text-gradient {
+  background: linear-gradient(135deg, #818cf8 0%, #10b981 100%);
+  -webkit-background-clip: text;
+  -webkit-text-fill-color: transparent;
+  background-clip: text;
+}
+
+/* Stagger animation delays */
+.stagger-1 { animation-delay: 0.05s; opacity: 0; }
+.stagger-2 { animation-delay: 0.1s; opacity: 0; }
+.stagger-3 { animation-delay: 0.15s; opacity: 0; }
+.stagger-4 { animation-delay: 0.2s; opacity: 0; }
+.stagger-5 { animation-delay: 0.25s; opacity: 0; }
+.stagger-6 { animation-delay: 0.3s; opacity: 0; }
+
+.card-hover {
+  transition: all 0.2s ease;
+}
+.card-hover:hover {
+  border-color: rgba(99, 102, 241, 0.4) !important;
+  box-shadow: 0 4px 32px rgba(99, 102, 241, 0.08);
+  transform: translateY(-1px);
+}
+
+/* Divider */
+.divide-y > * + * {
+  border-top-width: 1px;
+  border-top-style: solid;
+  border-top-color: #1e2535;
+}
