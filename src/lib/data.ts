@@ -63,27 +63,46 @@ export interface Template {
   usedBy: number;
 }
 
-const now = new Date();
-const daysAgo = (d: number) => new Date(now.getTime() - d * 86400000);
-const hoursAgo = (h: number) => new Date(now.getTime() - h * 3600000);
-const minutesAgo = (m: number) => new Date(now.getTime() - m * 60000);
+/**
+ * Seeded PRNG (mulberry32) — deterministic on both server and client,
+ * eliminates React hydration mismatches caused by Math.random().
+ */
+function seededRandom(seed: number): () => number {
+  let s = seed;
+  return () => {
+    s |= 0;
+    s = (s + 0x6d2b79f5) | 0;
+    let t = Math.imul(s ^ (s >>> 15), 1 | s);
+    t = (t + Math.imul(t ^ (t >>> 7), 61 | t)) ^ t;
+    return ((t ^ (t >>> 14)) >>> 0) / 4294967296;
+  };
+}
+
+// Use a fixed reference date so static pages stay deterministic
+const BASE_DATE = new Date("2026-02-28T00:00:00.000Z");
+const daysAgo = (d: number) => new Date(BASE_DATE.getTime() - d * 86400000);
+const hoursAgo = (h: number) => new Date(BASE_DATE.getTime() - h * 3600000);
+const minutesAgo = (m: number) => new Date(BASE_DATE.getTime() - m * 60000);
 
 function generateExecutions(
   workflowId: string,
   count: number,
-  successRate: number
+  successRate: number,
 ): Execution[] {
+  const rand = seededRandom(workflowId.split("").reduce((a, c) => a + c.charCodeAt(0), 0));
+  const triggers = ["Webhook", "Schedule", "Manual"] as const;
+
   const execs: Execution[] = [];
   for (let i = 0; i < count; i++) {
-    const isSuccess = Math.random() * 100 < successRate;
+    const isSuccess = rand() * 100 < successRate;
     execs.push({
       id: `exec-${workflowId}-${i}`,
       workflowId,
-      startedAt: minutesAgo(i * 47 + Math.floor(Math.random() * 30)),
-      duration: 800 + Math.floor(Math.random() * 4200),
+      startedAt: minutesAgo(i * 47 + Math.floor(rand() * 30)),
+      duration: 800 + Math.floor(rand() * 4200),
       status: isSuccess ? "success" : i === 0 ? "running" : "failed",
-      triggeredBy: i % 3 === 0 ? "Webhook" : i % 3 === 1 ? "Schedule" : "Manual",
-      itemsProcessed: Math.floor(Math.random() * 50) + 1,
+      triggeredBy: triggers[i % 3],
+      itemsProcessed: Math.floor(rand() * 50) + 1,
     });
   }
   return execs;
@@ -454,14 +473,15 @@ export const templates: Template[] = [
   },
 ];
 
-// Generate chart data for the last 30 days
+// Generate chart data for the last 30 days (deterministic)
 export function generateChartData(workflowId?: string) {
+  const rand = seededRandom(workflowId ? workflowId.length * 31 : 42);
   const data = [];
   for (let i = 29; i >= 0; i--) {
     const date = daysAgo(i);
-    const executions = Math.floor(Math.random() * 40) + 10;
-    const successRate = 90 + Math.random() * 9;
-    const timeSaved = executions * (15 + Math.random() * 20);
+    const executions = Math.floor(rand() * 40) + 10;
+    const successRate = 90 + rand() * 9;
+    const timeSaved = executions * (15 + rand() * 20);
     data.push({
       date: date.toLocaleDateString("en-US", { month: "short", day: "numeric" }),
       executions,
@@ -479,9 +499,10 @@ export function getGlobalMetrics() {
     workflows.reduce((a, w) => a + w.successRate, 0) / workflows.length;
   const totalTimeSavedToday = workflows.reduce(
     (a, w) => a + w.runsToday * w.timeSavedPerRun,
-    0
+    0,
   );
   const activeWorkflows = workflows.filter((w) => w.status === "active").length;
+  const errorWorkflows = workflows.filter((w) => w.status === "error").length;
 
   return {
     totalExecutionsToday,
@@ -489,5 +510,24 @@ export function getGlobalMetrics() {
     totalTimeSavedToday,
     activeWorkflows,
     totalWorkflows: workflows.length,
+    errorWorkflows,
   };
+}
+
+export function getCategoryBreakdown() {
+  const categories = ["Sales", "Marketing", "Operations", "Support"] as const;
+  const categoryColors: Record<string, string> = {
+    Sales: "#6366f1",
+    Marketing: "#ec4899",
+    Operations: "#f59e0b",
+    Support: "#10b981",
+  };
+  const totals = categories.map((cat) => ({
+    name: cat,
+    value: workflows
+      .filter((w) => w.category === cat)
+      .reduce((a, w) => a + w.runsToday, 0),
+    color: categoryColors[cat],
+  }));
+  return totals;
 }

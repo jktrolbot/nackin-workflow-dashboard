@@ -14,7 +14,6 @@ import {
   CheckCircle,
   TrendingUp,
 } from "lucide-react";
-import { Badge } from "@/components/ui/badge";
 import { formatDistanceToNow } from "date-fns";
 
 const statusConfig = {
@@ -44,7 +43,6 @@ export default async function WorkflowDetailPage({ params }: Props) {
   const catColor = categoryColors[workflow.category] ?? "#64748b";
 
   const totalRuns = workflow.executions.length;
-  const successRuns = workflow.executions.filter(e => e.status === "success").length;
   const totalTimeSaved = workflow.runsToday * workflow.timeSavedPerRun;
 
   return (

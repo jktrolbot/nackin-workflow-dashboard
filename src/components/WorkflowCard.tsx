@@ -2,13 +2,28 @@
 
 import { Workflow, WorkflowStatus } from "@/lib/data";
 import Link from "next/link";
-import { Play, Pause, AlertCircle, ChevronRight, Clock, Zap } from "lucide-react";
-import { Badge } from "@/components/ui/badge";
+import {
+  Play,
+  Pause,
+  AlertCircle,
+  ChevronRight,
+  Clock,
+  Zap,
+  PlayCircle,
+} from "lucide-react";
 import { formatDistanceToNow } from "date-fns";
+import { useToast } from "@/components/ui/toast";
+import { useState } from "react";
 
 const statusConfig: Record<
   WorkflowStatus,
-  { icon: typeof Play; label: string; color: string; bg: string; border: string }
+  {
+    icon: typeof Play;
+    label: string;
+    color: string;
+    bg: string;
+    border: string;
+  }
 > = {
   active: {
     icon: Play,
@@ -48,12 +63,39 @@ interface WorkflowCardProps {
 export default function WorkflowCard({ workflow, index }: WorkflowCardProps) {
   const status = statusConfig[workflow.status];
   const StatusIcon = status.icon;
+  const { toast } = useToast();
+  const [running, setRunning] = useState(false);
+
+  function handleManualRun(e: React.MouseEvent) {
+    e.preventDefault();
+    e.stopPropagation();
+    if (workflow.status === "error") {
+      toast(
+        `Cannot run "${workflow.name}" — workflow has errors. Fix issues first.`,
+        "error",
+      );
+      return;
+    }
+    if (workflow.status === "paused") {
+      toast(`"${workflow.name}" is paused. Resume it first.`, "warning");
+      return;
+    }
+    setRunning(true);
+    setTimeout(() => {
+      setRunning(false);
+      toast(`"${workflow.name}" triggered manually — ${Math.floor(Math.random() * 20) + 5} items queued.`, "success");
+    }, 1800);
+  }
 
   return (
-    <Link href={`/workflows/${workflow.id}`} className="block">
+    <Link href={`/workflows/${workflow.id}`} className="block group">
       <div
-        className={`rounded-xl p-5 animate-fade-in-up stagger-${Math.min(index + 1, 6)} card-hover`}
-        style={{ background: "#0f1420", border: "1px solid #1e2535", cursor: "pointer" }}
+        className={`rounded-xl p-5 animate-fade-in-up stagger-${Math.min(index + 1, 6)} card-hover relative`}
+        style={{
+          background: "#0f1420",
+          border: "1px solid #1e2535",
+          cursor: "pointer",
+        }}
       >
         <div className="flex items-start justify-between mb-3">
           <div className="flex-1 min-w-0 mr-4">
@@ -73,12 +115,37 @@ export default function WorkflowCard({ workflow, index }: WorkflowCardProps) {
             </div>
             <h3
               className="font-semibold text-sm leading-snug truncate"
-              style={{ color: "#e2e8f0", fontFamily: "var(--font-display)" }}
+              style={{
+                color: "#e2e8f0",
+                fontFamily: "var(--font-display)",
+              }}
             >
               {workflow.name}
             </h3>
           </div>
-          <div className="flex items-center gap-1.5 flex-shrink-0">
+          <div className="flex items-center gap-2 flex-shrink-0">
+            {/* Manual run button */}
+            <button
+              onClick={handleManualRun}
+              disabled={running}
+              title="Trigger manual run"
+              className="w-7 h-7 rounded-lg flex items-center justify-center transition-all opacity-0 group-hover:opacity-100 focus:opacity-100"
+              style={{
+                background: "rgba(99,102,241,0.12)",
+                border: "1px solid rgba(99,102,241,0.25)",
+                color: running ? "#6366f1" : "#818cf8",
+              }}
+              aria-label="Run workflow"
+            >
+              {running ? (
+                <span
+                  className="w-3 h-3 rounded-full border-2 border-indigo-400 border-t-transparent animate-spin"
+                  aria-hidden="true"
+                />
+              ) : (
+                <PlayCircle className="w-3.5 h-3.5" />
+              )}
+            </button>
             <span
               className="flex items-center gap-1.5 text-xs font-medium px-2.5 py-1 rounded-full"
               style={{
@@ -88,7 +155,10 @@ export default function WorkflowCard({ workflow, index }: WorkflowCardProps) {
               }}
             >
               {workflow.status === "active" && (
-                <span className="w-1.5 h-1.5 rounded-full animate-pulse" style={{ background: "#10b981" }} />
+                <span
+                  className="w-1.5 h-1.5 rounded-full animate-pulse"
+                  style={{ background: "#10b981" }}
+                />
               )}
               <StatusIcon className="w-3 h-3" />
               {status.label}
@@ -105,15 +175,25 @@ export default function WorkflowCard({ workflow, index }: WorkflowCardProps) {
                 style={{ background: "#141824", border: "1px solid #2a3347" }}
               >
                 <span>{node.icon}</span>
-                <span className="hidden sm:inline truncate max-w-20" style={{ color: "#94a3b8" }}>{node.label}</span>
+                <span
+                  className="hidden sm:inline truncate max-w-20"
+                  style={{ color: "#94a3b8" }}
+                >
+                  {node.label}
+                </span>
               </div>
               {i < Math.min(workflow.nodes.length, 5) - 1 && (
-                <ChevronRight className="w-3 h-3 flex-shrink-0" style={{ color: "#2a3347" }} />
+                <ChevronRight
+                  className="w-3 h-3 flex-shrink-0"
+                  style={{ color: "#2a3347" }}
+                />
               )}
             </div>
           ))}
           {workflow.nodes.length > 5 && (
-            <span className="text-xs" style={{ color: "#64748b" }}>+{workflow.nodes.length - 5}</span>
+            <span className="text-xs" style={{ color: "#64748b" }}>
+              +{workflow.nodes.length - 5}
+            </span>
           )}
         </div>
 
@@ -122,12 +202,30 @@ export default function WorkflowCard({ workflow, index }: WorkflowCardProps) {
           <div className="flex items-center gap-1.5">
             <Zap className="w-3 h-3" style={{ color: "#6366f1" }} />
             <span style={{ color: "#94a3b8" }}>
-              <span style={{ fontFamily: "var(--font-mono)", color: "#e2e8f0" }}>{workflow.runsToday}</span> runs today
+              <span
+                style={{
+                  fontFamily: "var(--font-mono)",
+                  color: "#e2e8f0",
+                }}
+              >
+                {workflow.runsToday}
+              </span>{" "}
+              runs today
             </span>
           </div>
           <div className="flex items-center gap-1.5">
-            <div className="w-1.5 h-1.5 rounded-full" style={{ background: "#10b981" }} />
-            <span style={{ fontFamily: "var(--font-mono)", color: "#10b981" }}>{workflow.successRate}%</span>
+            <div
+              className="w-1.5 h-1.5 rounded-full"
+              style={{ background: "#10b981" }}
+            />
+            <span
+              style={{
+                fontFamily: "var(--font-mono)",
+                color: workflow.successRate >= 95 ? "#10b981" : workflow.successRate >= 80 ? "#f59e0b" : "#ef4444",
+              }}
+            >
+              {workflow.successRate}%
+            </span>
           </div>
           <div className="flex items-center gap-1.5 ml-auto">
             <Clock className="w-3 h-3" style={{ color: "#64748b" }} />
